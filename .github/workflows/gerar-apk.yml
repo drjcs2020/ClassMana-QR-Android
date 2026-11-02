@@ -35,9 +35,9 @@ jobs:
               im = im.crop(bbox)
           # O logo original ocupa 96% da area; sem mudar a arte.
           size = 432
-          scaled = im.resize((414, 414), Image.Resampling.LANCZOS)
+          scaled = im.resize((350, 350), Image.Resampling.LANCZOS)
           canvas = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-          canvas.alpha_composite(scaled, (9, 9))
+          canvas.alpha_composite(scaled, (41, 41))
           canvas.save("app/src/main/res/drawable/classmana_launcher_foreground.png", optimize=True)
           PY
       - name: Build APK debug
