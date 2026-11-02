@@ -31,8 +31,10 @@ jobs:
         run: |
           echo '### Erros de compilação' >> "$GITHUB_STEP_SUMMARY"
           grep -E '(^e: |^error: |\.kt:[0-9]+:|Unresolved reference|Compilation error|FAILURE:|What went wrong)' build-output.log | tail -n 60 | tee -a "$GITHUB_STEP_SUMMARY" || true
+      - name: Nomear APK como ClassMana.apk
+        run: cp app/build/outputs/apk/debug/app-debug.apk ClassMana.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: ClassMana-QR-Android-APK
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: ClassMana-Android
+          path: ClassMana.apk
           if-no-files-found: error
