@@ -35,9 +35,9 @@ jobs:
               im = im.crop(bbox)
           # O logo original ocupa 96% da area; sem mudar a arte.
           size = 432
-          scaled = im.resize((350, 350), Image.Resampling.LANCZOS)
+          scaled = im.resize((330, 330), Image.Resampling.LANCZOS)
           canvas = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-          canvas.alpha_composite(scaled, (41, 41))
+          canvas.alpha_composite(scaled, (51, 51))
           canvas.save("app/src/main/res/drawable/classmana_launcher_foreground.png", optimize=True)
           PY
       - name: Build APK debug
@@ -73,6 +73,6 @@ jobs:
           fi
       - uses: actions/upload-artifact@v4
         with:
-          name: ClassMana-Duas-Cameras-v1.0.2
+          name: ClassMana-v1.0.4
           path: ClassMana.apk
           if-no-files-found: error
