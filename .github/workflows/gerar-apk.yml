@@ -57,7 +57,13 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          VERSION=$(python3 -c 'import pathlib,re; s=pathlib.Path("app/build.gradle.kts").read_text(); m=re.search(r\'versionName\\s*=\\s*"([^"]+)"\',s); print(m.group(1) if m else "")')
+          VERSION=$(python3 - <<'PY'
+          import pathlib, re
+          source = pathlib.Path('app/build.gradle.kts').read_text()
+          match = re.search(r'versionName\s*=\s*"([^"]+)"', source)
+          print(match.group(1) if match else '')
+          PY
+          )
           test -n "$VERSION"
           TAG="v$VERSION"
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
