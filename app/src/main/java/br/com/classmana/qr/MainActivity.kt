@@ -83,12 +83,16 @@ class MainActivity : Activity() {
     }
     private fun showWelcome(){
         generation++;scanBusy=false;loginSubmitted=false;confirmedLogin=false;account=null;secret=null
-        showCard("Leitor de Cartão de Herói","Aproxime o cartão da câmera frontal do tablet.","📷 Escanear QR Code") { scan() }
+        val box=showCard("Leitor de Cartão de Herói","Escolha a câmera para ler o cartão do estudante.",null,null)
+        box.addView(button("📷 Câmera frontal") { scan(true) },LinearLayout.LayoutParams(-1,dp(55)))
+        box.addView(button("📷 Câmera traseira") { scan(false) },LinearLayout.LayoutParams(-1,dp(55)).apply { topMargin=dp(12) })
     }
-    private fun scan(){
+    private var lastFrontCamera=true
+    private fun scan(front:Boolean){
         if(scanBusy)return
         scanBusy=true
-        startActivityForResult(Intent(this, FrontCameraActivity::class.java), 9001)
+        lastFrontCamera=front
+        startActivityForResult(Intent(this, FrontCameraActivity::class.java).putExtra("useFrontCamera",front), 9001)
     }
 
     override fun onActivityResult(requestCode:Int,resultCode:Int,data:Intent?){
@@ -96,12 +100,12 @@ class MainActivity : Activity() {
         if(requestCode!=9001)return
         scanBusy=false
         if(resultCode!=RESULT_OK){
-            showCard("Leitor pausado","Toque para voltar a escanear seu cartão.","📷 Ativar câmera frontal"){scan()}
+            showWelcome()
             return
         }
         val decoded=decodeCard(data?.getStringExtra("qr"))
         if(decoded==null){
-            showCard("Cartão inválido","Use seu Cartão de Herói ClassMana.","Tentar novamente"){scan()}
+            showCard("Cartão inválido","Use seu Cartão de Herói ClassMana.","Voltar à seleção de câmera"){showWelcome()}
         }else{
             account=decoded.first;secret=decoded.second;startLogin()
         }
