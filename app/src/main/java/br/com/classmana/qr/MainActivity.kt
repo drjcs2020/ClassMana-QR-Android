@@ -84,7 +84,6 @@ class MainActivity : Activity() {
     private fun showWelcome(){
         generation++;scanBusy=false;loginSubmitted=false;confirmedLogin=false;account=null;secret=null
         showCard("Leitor de Cartão de Herói","Aproxime o cartão da câmera frontal do tablet.","📷 Escanear QR Code") { scan() }
-        handler.post { if (!scanBusy && account==null) scan() }
     }
     private fun scan(){
         if(scanBusy)return
