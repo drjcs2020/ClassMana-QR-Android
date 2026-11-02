@@ -12,6 +12,8 @@ import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Button
+import android.widget.ImageView
+import android.graphics.drawable.GradientDrawable
 import androidx.activity.ComponentActivity
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
@@ -35,42 +37,72 @@ class FrontCameraActivity : ComponentActivity() {
     private lateinit var previewView: PreviewView
     private lateinit var status: TextView
 
+    private fun dp(n:Int):Int=(n*resources.displayMetrics.density).toInt()
+    private fun rounded(color:Int,radius:Int):GradientDrawable =
+        GradientDrawable().apply {setColor(color);cornerRadius=dp(radius).toFloat()}
+    private fun caption(message:String,size:Float,bold:Boolean=false):TextView =
+        TextView(this).apply {
+            text=message; textSize=size; gravity=Gravity.CENTER
+            setTextColor(Color.rgb(30,59,83))
+            if(bold)typeface=Typeface.DEFAULT_BOLD
+        }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        window.statusBarColor = Color.rgb(17, 41, 76)
-        val root = FrameLayout(this)
-        root.setBackgroundColor(Color.rgb(12, 29, 57))
-        previewView = PreviewView(this)
-        previewView.scaleType = PreviewView.ScaleType.FIT_CENTER
-        root.addView(previewView, FrameLayout.LayoutParams(-1, -1))
-        val overlay = LinearLayout(this).apply {
+        window.statusBarColor=Color.rgb(227,247,251)
+        val outer=FrameLayout(this).apply {setBackgroundColor(Color.rgb(235,248,251))}
+        val card=LinearLayout(this).apply {
             orientation=LinearLayout.VERTICAL
             gravity=Gravity.CENTER_HORIZONTAL
-            setPadding(18, 22, 18, 18)
-            setBackgroundColor(Color.argb(205, 14, 34, 66))
+            setPadding(dp(16),dp(15),dp(16),dp(18))
+            background=rounded(Color.WHITE,21)
         }
-        val heading=TextView(this).apply {
-            text="CLASSMANA  •  CHECK-IN"
-            textSize=21f; typeface=Typeface.DEFAULT_BOLD; setTextColor(Color.WHITE)
-            gravity=Gravity.CENTER
+        val logo=ImageView(this).apply {
+            setImageResource(R.drawable.classmana_logo)
+            scaleType=ImageView.ScaleType.FIT_CENTER
+            adjustViewBounds=true
         }
-        status=TextView(this).apply {
-            text="Aproxime seu cartão da câmera frontal"
-            textSize=15f; setTextColor(Color.WHITE);gravity=Gravity.CENTER
+        card.addView(logo,LinearLayout.LayoutParams(dp(225),dp(85)))
+        val heading=caption("ClassMana QR — leitor",22f,true)
+        val titleParams=LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(4)}
+        card.addView(heading,titleParams)
+        status=caption("Aponte a câmera para o QR Code do estudante",14f)
+        val statusParams=LinearLayout.LayoutParams(-1,-2).apply{
+            topMargin=dp(9);bottomMargin=dp(15)
         }
-        overlay.addView(heading)
-        overlay.addView(status)
-        val top=FrameLayout.LayoutParams(-1, -2, Gravity.TOP)
-        root.addView(overlay,top)
+        card.addView(status,statusParams)
+        val cameraFrame=FrameLayout(this).apply {
+            background=GradientDrawable().apply{
+                setColor(Color.rgb(14,40,58))
+                cornerRadius=dp(16).toFloat()
+                setStroke(dp(2),Color.rgb(52,178,183))
+            }
+            clipToOutline=true
+        }
+        previewView=PreviewView(this).apply{
+            scaleType=PreviewView.ScaleType.FIT_CENTER
+        }
+        cameraFrame.addView(previewView,FrameLayout.LayoutParams(-1,-1))
+        // A moldura permanece, mesmo quando a permissão da câmera ainda não foi concedida.
+        val cameraParams=LinearLayout.LayoutParams(-1,dp(237)).apply{
+            bottomMargin=dp(17)
+        }
+        card.addView(cameraFrame,cameraParams)
         val cancel=Button(this).apply {
-            text="Cancelar leitura";isAllCaps=false
-            setOnClickListener { setResult(Activity.RESULT_CANCELED);finish() }
+            text="Cancelar";isAllCaps=false
+            textSize=15f
+            setTextColor(Color.WHITE)
+            background=rounded(Color.rgb(61,184,189),11)
+            setOnClickListener{setResult(Activity.RESULT_CANCELED);finish()}
         }
-        val cp=FrameLayout.LayoutParams(-2,-2,Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL)
-        cp.bottomMargin=28
-        root.addView(cancel,cp)
-        setContentView(root)
-        if(ContextCompat.checkSelfPermission(this,Manifest.permission.CAMERA)==PackageManager.PERMISSION_GRANTED) startFrontCamera()
+        card.addView(cancel,LinearLayout.LayoutParams(dp(160),dp(50)))
+        val lp=FrameLayout.LayoutParams(-1,-2,Gravity.CENTER).apply{
+            marginStart=dp(22);marginEnd=dp(22)
+        }
+        outer.addView(card,lp)
+        setContentView(outer)
+        if(ContextCompat.checkSelfPermission(this,Manifest.permission.CAMERA)==PackageManager.PERMISSION_GRANTED)
+            startFrontCamera()
         else requestPermissions(arrayOf(Manifest.permission.CAMERA),303)
     }
 
