@@ -22,6 +22,25 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
+      - name: Preparar icone ClassMana sem fundo branco
+        run: |
+          python3 -m pip install --quiet pillow
+          python3 - <<'PY'
+          from PIL import Image
+          from pathlib import Path
+          src=Path("app/src/main/res/drawable/classmana_app_icon.png")
+          im=Image.open(src).convert("RGBA")
+          # Remove margens transparentes, ampliando a marca dentro da area do launcher.
+          bbox=im.getchannel("A").getbbox()
+          if bbox:
+              im=im.crop(bbox)
+          # Aplicativos Android exibem o foreground dentro de uma mascara adaptativa.
+          canvas=Image.new("RGBA",(432,432),(0,0,0,0))
+          im.thumbnail((340,340),Image.Resampling.LANCZOS)
+          canvas.alpha_composite(im,((432-im.width)//2,(432-im.height)//2))
+          out=Path("app/src/main/res/drawable/classmana_launcher_foreground.png")
+          canvas.save(out,optimize=True)
+          PY
       - name: Build APK debug
         run: |
           set -o pipefail
