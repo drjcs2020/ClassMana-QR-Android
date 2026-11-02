@@ -22,20 +22,23 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
-      - name: Ampliar a arte original no icone do Android
+      - name: Ajustar escala da logo original para o icone circular
         run: |
           python3 -m pip install --quiet pillow
           python3 - <<'PY'
           from PIL import Image
           from pathlib import Path
-          src=Path("app/src/main/res/drawable/classmana_app_icon.png")
-          im=Image.open(src).convert("RGBA")
-          # Apenas dimensionar a mesma arte original. Sem criar outra logo.
-          bbox=im.getchannel("A").getbbox()
+          src = Path("app/src/main/res/drawable/classmana_app_icon.png")
+          im = Image.open(src).convert("RGBA")
+          bbox = im.getchannel("A").getbbox()
           if bbox:
-              im=im.crop(bbox)
-          im=im.resize((432,432),Image.Resampling.LANCZOS)
-          im.save("app/src/main/res/drawable/classmana_launcher_full.png", optimize=True)
+              im = im.crop(bbox)
+          # O logo original ocupa 96% da area; sem mudar a arte.
+          size = 432
+          scaled = im.resize((414, 414), Image.Resampling.LANCZOS)
+          canvas = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+          canvas.alpha_composite(scaled, (9, 9))
+          canvas.save("app/src/main/res/drawable/classmana_launcher_foreground.png", optimize=True)
           PY
       - name: Build APK debug
         run: |
