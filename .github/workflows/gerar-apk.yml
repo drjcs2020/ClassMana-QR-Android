@@ -23,7 +23,14 @@ jobs:
         with:
           gradle-version: '8.9'
       - name: Build APK debug
-        run: gradle --no-daemon assembleDebug
+        run: |
+          set -o pipefail
+          gradle --no-daemon --console=plain assembleDebug 2>&1 | tee build-output.log
+      - name: Exibir erros Kotlin/Gradle
+        if: failure()
+        run: |
+          echo '### Erros de compilação' >> "$GITHUB_STEP_SUMMARY"
+          grep -E '(^e: |^error: |\.kt:[0-9]+:|Unresolved reference|Compilation error|FAILURE:|What went wrong)' build-output.log | tail -n 60 | tee -a "$GITHUB_STEP_SUMMARY" || true
       - uses: actions/upload-artifact@v4
         with:
           name: ClassMana-QR-Android-APK
