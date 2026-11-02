@@ -49,6 +49,7 @@ class MainActivity : Activity() {
         container.addView(web, FrameLayout.LayoutParams(-1,-1))
         configureWeb()
         showWelcome()
+        ClassManaUpdateChecker.check(this)
     }
 
     private fun rounded(color: Int): GradientDrawable = GradientDrawable().apply {
