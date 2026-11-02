@@ -119,9 +119,10 @@ class FrontCameraActivity : ComponentActivity() {
         future.addListener({
             try{
                 val provider=future.get()
-                val camera=CameraSelector.DEFAULT_FRONT_CAMERA
+                val isFront=intent.getBooleanExtra("useFrontCamera",true)
+                val camera=if(isFront) CameraSelector.DEFAULT_FRONT_CAMERA else CameraSelector.DEFAULT_BACK_CAMERA
                 if(!provider.hasCamera(camera)){
-                    status.text="Este dispositivo não possui câmera frontal disponível."
+                    status.text=if(isFront) "Câmera frontal indisponível." else "Câmera traseira indisponível."
                     return@addListener
                 }
                 val preview=Preview.Builder().build()
@@ -147,7 +148,7 @@ class FrontCameraActivity : ComponentActivity() {
                 }
                 provider.unbindAll()
                 provider.bindToLifecycle(this,camera,preview,analysis)
-            }catch(e:Exception){status.text="Falha ao iniciar a câmera frontal"}
+            }catch(e:Exception){status.text="Falha ao iniciar a câmera selecionada"}
         },ContextCompat.getMainExecutor(this))
     }
 
