@@ -2,8 +2,6 @@ package br.com.classmana.qr
 
 import android.annotation.SuppressLint
 import android.app.Activity
-import android.app.AlertDialog
-import android.widget.EditText
 import android.graphics.Color
 import android.os.Bundle
 import android.os.Handler
@@ -29,6 +27,7 @@ import kotlin.concurrent.thread
 
 class MainActivity : Activity() {
     private val portal = "https://classmana.com/pt/student"
+    private val checkinEndpoint = "https://script.google.com/macros/s/AKfycby2fACUJtKLgHQsB8rviToMvzc4d-9QzPNw6h9cyWEKTUZIiFGeGIk06ZdCYrAbOHSq/exec"
     private val handler = Handler(Looper.getMainLooper())
     private lateinit var container: FrameLayout
     private lateinit var web: WebView
@@ -86,19 +85,7 @@ class MainActivity : Activity() {
     }
     private fun showWelcome(){
         generation++;scanBusy=false;loginSubmitted=false;confirmedLogin=false;account=null;secret=null
-        val box=showCard("Leitor de Cartão de Herói","Aponte seu cartão para iniciar sua aventura.","📷 Escanear QR Code") { scan() }
-        box.addView(Button(this).apply { text="⚙ Configurar check-in"; isAllCaps=false; setOnClickListener { configureEndpoint() } })
-    }
-    private fun configureEndpoint(){
-        val value=EditText(this).apply { setSingleLine(true);hint="https://script.google.com/macros/s/.../exec";setText(getPreferences(0).getString("endpoint","")) }
-        AlertDialog.Builder(this).setTitle("Google Apps Script").setMessage("Cole a URL /exec usada pela extensão. Não informe senhas ou tokens.")
-            .setView(value).setNegativeButton("Cancelar",null).setPositiveButton("Salvar") { _,_ ->
-                val url=value.text.toString().trim()
-                if(Regex("https://script\\.google\\.com/macros/s/[^/]+/exec").matches(url)){
-                    getPreferences(0).edit().putString("endpoint",url).apply()
-                    Toast.makeText(this,"Endereço salvo",Toast.LENGTH_SHORT).show()
-                }else Toast.makeText(this,"URL inválida; não foi salva",Toast.LENGTH_LONG).show()
-            }.show()
+        showCard("Leitor de Cartão de Herói","Aponte seu cartão para iniciar sua aventura.","📷 Escanear QR Code") { scan() }
     }
     private fun scan(){
         if(scanBusy)return
@@ -187,7 +174,7 @@ class MainActivity : Activity() {
         evaluate(js){r->if(r!="true")loginSubmitted=false;handler.postDelayed({checkLogin()},650)}
     }
     private fun postCheckin(user:String,pwd:String){
-        val endpoint=getPreferences(0).getString("endpoint","")?:""
+        val endpoint=checkinEndpoint
         if(!Regex("https://script\\.google\\.com/macros/s/[^/]+/exec").matches(endpoint)){
             showResult(JSONObject().put("ok",false).put("error","Configure a URL do Apps Script nas configurações."));return
         }
