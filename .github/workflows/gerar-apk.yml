@@ -53,6 +53,6 @@ jobs:
         run: cp app/build/outputs/apk/debug/app-debug.apk ClassMana.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: ClassMana-Android
+          name: ClassMana-Duas-Cameras-v1.0.2
           path: ClassMana.apk
           if-no-files-found: error
