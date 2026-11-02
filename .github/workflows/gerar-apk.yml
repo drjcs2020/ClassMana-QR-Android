@@ -104,7 +104,8 @@ jobs:
           test -n "$VERSION"
           TAG="v$VERSION"
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release upload "$TAG" ClassMana.apk --clobber --repo "$GITHUB_REPOSITORY"
+            echo "Release $TAG ja existe. Aumente versionName e versionCode antes de publicar." >&2
+            exit 1
           else
             gh release create "$TAG" ClassMana.apk --repo "$GITHUB_REPOSITORY" --title "ClassMana $VERSION" --notes "APK ClassMana $VERSION. Instale usando o instalador do Android."
           fi
