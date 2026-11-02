@@ -1,0 +1,16 @@
+CLASSMANA QR ANDROID — PROJETO FONTE (NÃO É APK COMPILADO)
+
+1. Abra esta pasta no Android Studio (Open).
+2. Aguarde o Gradle baixar as dependências pela internet.
+3. No aplicativo, use ⚙ Configurar check-in para salvar a URL /exec do Apps Script.
+4. Build > Build APK(s). Resultado: app/build/outputs/apk/debug/app-debug.apk.
+
+ATENÇÃO: VERSÃO DE DESENVOLVIMENTO — NÃO HOMOLOGADA PARA USO COM ALUNOS.
+- Scanner nativo usa Google Code Scanner (requer Google Play Services).
+- A entrada do QR contém credenciais, sensíveis. Não publique cartões, base de alunos ou o endpoint com senhas.
+- O login no portal externo não dispõe de API oficial; a detecção visual do perfil não é uma prova independente da identidade. Valide em dispositivos reais.
+- A WebView compartilha seu próprio cookie store interno; a troca de contas remove todos os cookies da WebView antes de autenticar.
+- O Apps Script atual registra a presença quando credenciais do cartão coincidem com a base: não atesta independentemente a sessão no ClassMana.
+- O projeto Android não altera a extensão funcional do Windows 11 nem a planilha.
+
+COMPILAÇÃO NA NUVEM: inclui .github/workflows/gerar-apk.yml para o GitHub Actions construir e entregar app-debug.apk como artefato. Ainda não foi executado nem validado.
