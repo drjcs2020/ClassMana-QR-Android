@@ -92,9 +92,8 @@ class FrontCameraActivity : ComponentActivity() {
                     status.text="Este dispositivo não possui câmera frontal disponível."
                     return@addListener
                 }
-                val preview=Preview.Builder().build().apply {
-                    surfaceProvider=previewView.surfaceProvider
-                }
+                val preview=Preview.Builder().build()
+                preview.setSurfaceProvider(previewView.surfaceProvider)
                 val analysis=ImageAnalysis.Builder()
                     .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                     .build()
