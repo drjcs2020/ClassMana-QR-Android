@@ -20,7 +20,7 @@ import android.graphics.drawable.GradientDrawable
 import android.content.Intent
 import android.net.Uri
 import android.util.Base64
-import com.google.android.gms.codescanner.GmsBarcodeScanning
+import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
 import org.json.JSONObject
 import java.net.HttpURLConnection
