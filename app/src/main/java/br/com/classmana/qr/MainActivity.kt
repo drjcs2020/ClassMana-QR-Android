@@ -18,8 +18,6 @@ import android.graphics.drawable.GradientDrawable
 import android.content.Intent
 import android.net.Uri
 import android.util.Base64
-import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
-import com.google.mlkit.vision.barcode.common.Barcode
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
@@ -85,20 +83,29 @@ class MainActivity : Activity() {
     }
     private fun showWelcome(){
         generation++;scanBusy=false;loginSubmitted=false;confirmedLogin=false;account=null;secret=null
-        showCard("Leitor de Cartão de Herói","Aponte seu cartão para iniciar sua aventura.","📷 Escanear QR Code") { scan() }
+        showCard("Leitor de Cartão de Herói","Aproxime o cartão da câmera frontal do tablet.","📷 Escanear QR Code") { scan() }
+        handler.post { if (!scanBusy && account==null) scan() }
     }
     private fun scan(){
         if(scanBusy)return
         scanBusy=true
-        // O scanner do Google apresenta a camera automaticamente e retorna o QR sem armazenar imagem.
-        val scanner=GmsBarcodeScanning.getClient(this)
-        scanner.startScan().addOnSuccessListener { code ->
-            scanBusy=false
-            val decoded=decodeCard(code.rawValue)
-            if(decoded==null){showCard("Cartão inválido","Use um cartão ClassMana QR válido.","Tentar novamente"){scan()}}
-            else {account=decoded.first;secret=decoded.second;startLogin()}
-        }.addOnCanceledListener {scanBusy=false;showWelcome()}
-            .addOnFailureListener {e ->scanBusy=false;showCard("Câmera indisponível",e.localizedMessage?:"Não foi possível abrir a câmera.","Tentar novamente"){scan()}}
+        startActivityForResult(Intent(this, FrontCameraActivity::class.java), 9001)
+    }
+
+    override fun onActivityResult(requestCode:Int,resultCode:Int,data:Intent?){
+        super.onActivityResult(requestCode,resultCode,data)
+        if(requestCode!=9001)return
+        scanBusy=false
+        if(resultCode!=RESULT_OK){
+            showCard("Leitor pausado","Toque para voltar a escanear seu cartão.","📷 Ativar câmera frontal"){scan()}
+            return
+        }
+        val decoded=decodeCard(data?.getStringExtra("qr"))
+        if(decoded==null){
+            showCard("Cartão inválido","Use seu Cartão de Herói ClassMana.","Tentar novamente"){scan()}
+        }else{
+            account=decoded.first;secret=decoded.second;startLogin()
+        }
     }
     private fun decodeCard(raw:String?):Pair<String,String>? = try{
         require(raw!=null&&raw.startsWith("CMQR1:")&&raw.length<4096)
