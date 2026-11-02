@@ -40,7 +40,39 @@ jobs:
           canvas.alpha_composite(scaled, (51, 51))
           canvas.save("app/src/main/res/drawable/classmana_launcher_foreground.png", optimize=True)
           PY
-      - name: Build APK debug
+      - name: Verificar assinatura permanente
+        id: signing
+        env:
+          KEYSTORE_B64: ${{ secrets.CLASSMANA_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.CLASSMANA_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.CLASSMANA_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.CLASSMANA_KEY_PASSWORD }}
+        run: |
+          if [[ -n "$KEYSTORE_B64" && -n "$STORE_PASSWORD" && -n "$KEY_ALIAS" && -n "$KEY_PASSWORD" ]]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "Assinatura permanente nao configurada: somente APK de teste, sem publicacao." >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Preparar chave de assinatura permanente
+        if: steps.signing.outputs.enabled == 'true'
+        env:
+          CLASSMANA_KEYSTORE_BASE64: ${{ secrets.CLASSMANA_KEYSTORE_BASE64 }}
+        run: |
+          printf '%s' "$CLASSMANA_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/classmana-release.jks"
+          chmod 600 "$RUNNER_TEMP/classmana-release.jks"
+      - name: Compilar APK assinado para atualizacoes
+        if: steps.signing.outputs.enabled == 'true'
+        env:
+          CLASSMANA_KEYSTORE_PATH: ${{ runner.temp }}/classmana-release.jks
+          CLASSMANA_KEYSTORE_PASSWORD: ${{ secrets.CLASSMANA_KEYSTORE_PASSWORD }}
+          CLASSMANA_KEY_ALIAS: ${{ secrets.CLASSMANA_KEY_ALIAS }}
+          CLASSMANA_KEY_PASSWORD: ${{ secrets.CLASSMANA_KEY_PASSWORD }}
+        run: |
+          set -o pipefail
+          gradle --no-daemon --console=plain assembleRelease 2>&1 | tee build-output.log
+      - name: Compilar somente APK de teste
+        if: steps.signing.outputs.enabled != 'true'
         run: |
           set -o pipefail
           gradle --no-daemon --console=plain assembleDebug 2>&1 | tee build-output.log
@@ -50,9 +82,14 @@ jobs:
           echo '### Erros de compilação' >> "$GITHUB_STEP_SUMMARY"
           grep -E '(^e: |^error: |\.kt:[0-9]+:|Unresolved reference|Compilation error|FAILURE:|What went wrong)' build-output.log | tail -n 60 | tee -a "$GITHUB_STEP_SUMMARY" || true
       - name: Nomear APK como ClassMana.apk
-        run: cp app/build/outputs/apk/debug/app-debug.apk ClassMana.apk
+        run: |
+          if [[ "${{ steps.signing.outputs.enabled }}" == "true" ]]; then
+            cp app/build/outputs/apk/release/app-release.apk ClassMana.apk
+          else
+            cp app/build/outputs/apk/debug/app-debug.apk ClassMana.apk
+          fi
       - name: Publicar APK no GitHub Releases
-        if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main' && steps.signing.outputs.enabled == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -73,6 +110,6 @@ jobs:
           fi
       - uses: actions/upload-artifact@v4
         with:
-          name: ClassMana-v1.0.4
+          name: ClassMana-APK-compilado
           path: ClassMana.apk
           if-no-files-found: error
