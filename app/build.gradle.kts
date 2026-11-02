@@ -1,5 +1,23 @@
 plugins { id("com.android.application"); id("org.jetbrains.kotlin.android") }
 android { namespace = "br.com.classmana.qr"; compileSdk = 35
+ val signingFile = System.getenv("CLASSMANA_KEYSTORE_PATH")
+ val signingPass = System.getenv("CLASSMANA_KEYSTORE_PASSWORD")
+ val signingAlias = System.getenv("CLASSMANA_KEY_ALIAS")
+ val signingKeyPass = System.getenv("CLASSMANA_KEY_PASSWORD")
+ if (!signingFile.isNullOrBlank() && !signingPass.isNullOrBlank() && !signingAlias.isNullOrBlank() && !signingKeyPass.isNullOrBlank()) {
+  signingConfigs {
+   create("classmanaPermanent") {
+    storeFile = file(signingFile)
+    storePassword = signingPass
+    keyAlias = signingAlias
+    keyPassword = signingKeyPass
+   }
+  }
+  buildTypes { getByName("release") {
+   isMinifyEnabled = false
+   signingConfig = signingConfigs.getByName("classmanaPermanent")
+  } }
+ }
  defaultConfig { applicationId = "br.com.classmana.qr"; minSdk = 26; targetSdk = 35; versionCode = 4; versionName = "1.0.4" }
  compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
  kotlinOptions { jvmTarget = "17" }
