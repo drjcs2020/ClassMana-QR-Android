@@ -74,7 +74,7 @@ class FrontCameraActivity : ComponentActivity() {
         else requestPermissions(arrayOf(Manifest.permission.CAMERA),303)
     }
 
-    override fun onRequestPermissionsResult(requestCode:Int,permissions:Array<out String>,grantResults:IntArray){
+    override fun onRequestPermissionsResult(requestCode:Int,permissions:Array<String>,grantResults:IntArray){
         super.onRequestPermissionsResult(requestCode,permissions,grantResults)
         if(requestCode==303){
             if(grantResults.firstOrNull()==PackageManager.PERMISSION_GRANTED)startFrontCamera()
