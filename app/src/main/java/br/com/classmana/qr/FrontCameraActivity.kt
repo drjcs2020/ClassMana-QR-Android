@@ -50,11 +50,20 @@ class FrontCameraActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.statusBarColor=Color.rgb(227,247,251)
+        // Em tablets na vertical, o leitor ocupa a maior parte da largura disponivel.
+        // O ajuste fica restrito a esta tela: login e check-in nao sao alterados.
+        val config = resources.configuration
+        val tabletPortrait = config.smallestScreenWidthDp >= 600 &&
+            config.screenHeightDp > config.screenWidthDp
+        val cameraHeightDp = if (tabletPortrait) {
+            minOf(config.screenWidthDp - 100, (config.screenHeightDp * 0.56f).toInt())
+                .coerceAtLeast(360)
+        } else 237
         val outer=FrameLayout(this).apply {setBackgroundColor(Color.rgb(235,248,251))}
         val card=LinearLayout(this).apply {
             orientation=LinearLayout.VERTICAL
             gravity=Gravity.CENTER_HORIZONTAL
-            setPadding(dp(16),dp(15),dp(16),dp(18))
+            setPadding(dp(if(tabletPortrait) 24 else 16),dp(if(tabletPortrait) 24 else 15),dp(if(tabletPortrait) 24 else 16),dp(if(tabletPortrait) 26 else 18))
             background=rounded(Color.WHITE,21)
         }
         val logo=ImageView(this).apply {
@@ -62,13 +71,13 @@ class FrontCameraActivity : ComponentActivity() {
             scaleType=ImageView.ScaleType.FIT_CENTER
             adjustViewBounds=true
         }
-        card.addView(logo,LinearLayout.LayoutParams(dp(225),dp(85)))
-        val heading=caption("ClassMana QR — leitor",22f,true)
+        card.addView(logo,LinearLayout.LayoutParams(dp(if(tabletPortrait) 280 else 225),dp(if(tabletPortrait) 110 else 85)))
+        val heading=caption("ClassMana QR — leitor",if(tabletPortrait) 30f else 22f,true)
         val titleParams=LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(4)}
         card.addView(heading,titleParams)
-        status=caption("Aponte a câmera para o QR Code do estudante",14f)
+        status=caption("Aponte a câmera para o QR Code do estudante",if(tabletPortrait) 20f else 14f)
         val statusParams=LinearLayout.LayoutParams(-1,-2).apply{
-            topMargin=dp(9);bottomMargin=dp(15)
+            topMargin=dp(if(tabletPortrait) 12 else 9);bottomMargin=dp(if(tabletPortrait) 22 else 15)
         }
         card.addView(status,statusParams)
         val cameraFrame=FrameLayout(this).apply {
@@ -80,24 +89,24 @@ class FrontCameraActivity : ComponentActivity() {
             clipToOutline=true
         }
         previewView=PreviewView(this).apply{
-            scaleType=PreviewView.ScaleType.FIT_CENTER
+            scaleType=if(tabletPortrait) PreviewView.ScaleType.FILL_CENTER else PreviewView.ScaleType.FIT_CENTER
         }
         cameraFrame.addView(previewView,FrameLayout.LayoutParams(-1,-1))
         // A moldura permanece, mesmo quando a permissão da câmera ainda não foi concedida.
-        val cameraParams=LinearLayout.LayoutParams(-1,dp(237)).apply{
-            bottomMargin=dp(17)
+        val cameraParams=LinearLayout.LayoutParams(-1,dp(cameraHeightDp)).apply{
+            bottomMargin=dp(if(tabletPortrait) 22 else 17)
         }
         card.addView(cameraFrame,cameraParams)
         val cancel=Button(this).apply {
             text="Cancelar";isAllCaps=false
-            textSize=15f
+            textSize=if(tabletPortrait) 21f else 15f
             setTextColor(Color.WHITE)
             background=rounded(Color.rgb(61,184,189),11)
             setOnClickListener{setResult(Activity.RESULT_CANCELED);finish()}
         }
-        card.addView(cancel,LinearLayout.LayoutParams(dp(160),dp(50)))
+        card.addView(cancel,LinearLayout.LayoutParams(dp(if(tabletPortrait) 230 else 160),dp(if(tabletPortrait) 66 else 50)))
         val lp=FrameLayout.LayoutParams(-1,-2,Gravity.CENTER).apply{
-            marginStart=dp(22);marginEnd=dp(22)
+            marginStart=dp(if(tabletPortrait) 26 else 22);marginEnd=dp(if(tabletPortrait) 26 else 22)
         }
         outer.addView(card,lp)
         setContentView(outer)
