@@ -209,6 +209,8 @@ class MainActivity : Activity() {
         val title=if(ok)"Recompensa do dia" else "Acesso ao ClassMana"
         val subtitle=if(!ok)data.optString("error","Não foi possível confirmar a presença.") else if(duplicate)"Presença já registrada hoje." else "Sua Presença foi Registrada!"
         val box=showCard(title,subtitle,null,null)
+        // Somente a recompensa nova toca moedas (sem duplicar credito).
+        if(ok && !duplicate) CoinSound.play()
         if(ok){
             if(!duplicate)box.addView(text("🪙 +10 Ouro   💎 +10 XP",19f))
             val days=data.optJSONArray("dias")
@@ -220,6 +222,7 @@ class MainActivity : Activity() {
             box.addView(text("Sequência: ${data.optInt("sequencia")} dia(s)",13f))
         }
         box.addView(button("OK — Entrar no ClassMana"){
+            if(ok && !duplicate) CoinSound.play()
             container.removeAllViews();container.addView(web,FrameLayout.LayoutParams(-1,-1))
             web.visibility=View.VISIBLE
             attachExitWatcher()
