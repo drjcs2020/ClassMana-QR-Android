@@ -60,7 +60,7 @@ object CoinSound {
                     .setTransferMode(AudioTrack.MODE_STATIC)
                     .setBufferSizeInBytes(pcm.size)
                     .build()
-                val audio = track
+                val audio = track ?: return@thread
                 if (audio.state == AudioTrack.STATE_INITIALIZED) {
                     audio.write(pcm, 0, pcm.size)
                     audio.play()
