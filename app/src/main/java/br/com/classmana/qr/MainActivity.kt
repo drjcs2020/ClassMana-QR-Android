@@ -135,8 +135,9 @@ class MainActivity : Activity() {
         val monster = monsterForToday() ?: return
         val bitmap = monsterBitmap(monster.first) ?: return
         val imageDp = when {
+            resources.configuration.screenHeightDp < 540 -> 90
+            resources.configuration.screenHeightDp < 700 -> 115
             resources.configuration.smallestScreenWidthDp >= 600 -> 200
-            resources.configuration.screenHeightDp < 690 -> 115
             else -> 160
         }
         val label = text("MONSTRO DO DIA  •  ${monster.second}", 16f).apply {
@@ -336,11 +337,11 @@ class MainActivity : Activity() {
         if(ok) {
             // O som de entrada toca quando o registro e confirmado, e nao depois de clicar em OK.
             showConfirmationAnimation(box, duplicate)
-            EntrySound.play()
+            EntrySound.play(this)
             // Moedas apenas para check-in novo; esperar o som de boas-vindas terminar.
             if(!duplicate) {
                 val g=generation
-                handler.postDelayed({ if(g==generation) CoinSound.play() }, 1250L)
+                handler.postDelayed({ if(g==generation) CoinSound.play() }, 3100L)
             }
         }
         if(ok){
