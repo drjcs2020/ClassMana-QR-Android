@@ -140,7 +140,7 @@ class MainActivity : Activity() {
             scaleType = ImageView.ScaleType.FIT_CENTER
             contentDescription = monster.second
         }
-        box.addView(thumbnail, LinearLayout.LayoutParams(dp(76), dp(76)).apply {
+        box.addView(thumbnail, LinearLayout.LayoutParams(dp(152), dp(152)).apply {
             topMargin = dp(8)
         })
     }
