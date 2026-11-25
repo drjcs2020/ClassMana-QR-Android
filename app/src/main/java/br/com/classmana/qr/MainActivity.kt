@@ -204,33 +204,66 @@ class MainActivity : Activity() {
         }
     }
     private fun showConfirmationAnimation(box: LinearLayout, duplicate: Boolean) {
-        val label = TextView(this).apply {
-            text = if (duplicate) "✓ Presença já contabilizada hoje" else "✓ Check-in confirmado!"
-            textSize = 17f
-            typeface = Typeface.DEFAULT_BOLD
+        // A confirmacao permanece visivel depois da animacao, inclusive em tablets.
+        val banner = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
-            setTextColor(Color.rgb(29, 112, 63))
-            background = rounded(Color.rgb(221, 246, 228))
-            setPadding(dp(15), dp(9), dp(15), dp(9))
+            setPadding(dp(12), dp(12), dp(12), dp(12))
+            background = GradientDrawable().apply {
+                setColor(Color.rgb(224, 249, 232))
+                cornerRadius = dp(20).toFloat()
+                setStroke(dp(2), Color.rgb(42, 162, 94))
+            }
             alpha = 0f
-            scaleX = 0.82f
-            scaleY = 0.82f
+            translationY = dp(26).toFloat()
         }
-        box.addView(label, LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(7) })
-        label.animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(420).start()
+        val symbol = text("✓", 49f).apply {
+            setTextColor(Color.rgb(31, 145, 70))
+            typeface = Typeface.DEFAULT_BOLD
+            scaleX = 0.2f
+            scaleY = 0.2f
+        }
+        val headline = text(
+            if (duplicate) "ACESSO RECONHECIDO!" else "PRESENÇA CONFIRMADA!",
+            20f
+        ).apply {
+            typeface = Typeface.DEFAULT_BOLD
+            setTextColor(Color.rgb(17, 110, 51))
+        }
+        val detail = text(
+            if (duplicate) "Você já recebeu a recompensa de hoje."
+            else "Seu check-in foi computado com sucesso!",
+            14f
+        ).apply { setTextColor(Color.rgb(31, 96, 57)) }
+        banner.addView(symbol)
+        banner.addView(headline)
+        banner.addView(detail)
+        box.addView(banner, LinearLayout.LayoutParams(-1, -2).apply {
+            topMargin = dp(9)
+            bottomMargin = dp(9)
+        })
+        banner.animate().alpha(1f).translationY(0f).setDuration(750).start()
+        symbol.animate().scaleX(1f).scaleY(1f).setDuration(1150)
+            .setInterpolator(android.view.animation.OvershootInterpolator(1.35f)).start()
     }
 
     private fun showResult(data:JSONObject){
         val ok=data.optBoolean("ok")
         val duplicate=data.optBoolean("jaRegistrado")
-        val title=if(ok)"Recompensa do dia" else "Acesso ao ClassMana"
-        val subtitle=if(!ok)data.optString("error","Não foi possível confirmar a presença.") else if(duplicate)"Presença já registrada hoje." else "Sua Presença foi Registrada!"
+        val title=if(ok)"Bem-vindo ao ClassMana!" else "Acesso ao ClassMana"
+        val subtitle=if(!ok)data.optString("error","Não foi possível confirmar a presença.")
+            else if(duplicate)"Seu login foi reconhecido. Presença já registrada hoje."
+            else "Sua entrada foi confirmada e a presença foi computada."
         val box=showCard(title,subtitle,null,null)
-        // O retorno positivo do servidor confirma o registro antes de qualquer efeito.
-        // Novas recompensas mantem o som de moedas; presencas repetidas nao creditam novamente.
-        if(ok && !duplicate) CoinSound.play()
         if(ok) {
+            // O som de entrada toca quando o registro e confirmado, e nao depois de clicar em OK.
             showConfirmationAnimation(box, duplicate)
+            EntrySound.play()
+            // Moedas apenas para check-in novo; esperar o som de boas-vindas terminar.
+            if(!duplicate) {
+                val g=generation
+                handler.postDelayed({ if(g==generation) CoinSound.play() }, 1250L)
+            }
         }
         if(ok){
             if(!duplicate)box.addView(text("🪙 +10 Ouro   💎 +10 XP",19f))
@@ -243,8 +276,7 @@ class MainActivity : Activity() {
             box.addView(text("Sequência: ${data.optInt("sequencia")} dia(s)",13f))
         }
         box.addView(button("OK — Entrar no ClassMana"){
-            // Som de boas-vindas ao abrir a plataforma, diferente das moedas do check-in.
-            if(ok) EntrySound.play()
+            // O som e o feedback ja foram exibidos na confirmacao do registro.
             container.removeAllViews();container.addView(web,FrameLayout.LayoutParams(-1,-1))
             web.visibility=View.VISIBLE
             attachExitWatcher()
