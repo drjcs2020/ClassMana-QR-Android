@@ -162,7 +162,6 @@ class MainActivity : Activity() {
     private fun showWelcome(){
         generation++;scanBusy=false;loginSubmitted=false;confirmedLogin=false;account=null;secret=null
         val box=showCard("Leitor de Cartão de Herói","Escolha a câmera para ler o cartão do estudante.",null,null)
-        showDailyMonster(box)
         box.addView(button("📷 Câmera frontal") { scan(true) },LinearLayout.LayoutParams(-1,dp(55)))
         box.addView(button("📷 Câmera traseira") { scan(false) },LinearLayout.LayoutParams(-1,dp(55)).apply { topMargin=dp(12) })
     }
@@ -227,8 +226,7 @@ class MainActivity : Activity() {
     }
     private fun startLogin(){
         val g=++generation;loginSubmitted=false;confirmedLogin=false;profileChecks=0
-        val loginBox = showCard("Autenticando com segurança","Encerrando a sessão anterior e preparando o acesso...",null,null)
-        showDailyMonster(loginBox)
+        showCard("Autenticando com segurança","Encerrando a sessão anterior e preparando o acesso...",null,null)
         // Remover sessão da WebView antes de cada login. A página não será exibida antes da confirmação.
         web.stopLoading()
         web.loadUrl("about:blank")
@@ -345,7 +343,12 @@ class MainActivity : Activity() {
             }
         }
         if(ok){
-            if(!duplicate)box.addView(text("🪙 +10 Ouro   💎 +10 XP",19f))
+            if(!duplicate) {
+                box.addView(text("🪙 +10 Ouro   💎 +10 XP",19f))
+                // O monstro aparece SOMENTE depois da recompensa confirmada,
+                // nunca na tela inicial, no leitor ou durante o login.
+                showDailyMonster(box)
+            }
             val days=data.optJSONArray("dias")
             val s=StringBuilder()
             if(days!=null)for(i in 0 until days.length()){
