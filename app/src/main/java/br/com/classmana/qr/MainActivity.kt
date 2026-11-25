@@ -131,32 +131,18 @@ class MainActivity : Activity() {
         }
     }
 
-    private fun showDailyMonster(box: LinearLayout) {
+    private fun showDailyMonsterThumbnail(box: LinearLayout) {
         val monster = monsterForToday() ?: return
         val bitmap = monsterBitmap(monster.first) ?: return
-        val imageDp = when {
-            resources.configuration.screenHeightDp < 540 -> 90
-            resources.configuration.screenHeightDp < 700 -> 115
-            resources.configuration.smallestScreenWidthDp >= 600 -> 200
-            else -> 160
-        }
-        val label = text("MONSTRO DO DIA  •  ${monster.second}", 16f).apply {
-            typeface = Typeface.DEFAULT_BOLD
-            setTextColor(Color.rgb(55, 113, 143))
-        }
-        box.addView(label)
-        val image = ImageView(this).apply {
+        // Somente a miniatura abaixo do botao OK: sem titulo, legenda ou painel extra.
+        val thumbnail = ImageView(this).apply {
             setImageBitmap(bitmap)
             scaleType = ImageView.ScaleType.FIT_CENTER
-            contentDescription = "Monstro do dia: ${monster.second}"
-            alpha = 0f
-            translationY = dp(12).toFloat()
+            contentDescription = monster.second
         }
-        box.addView(image, LinearLayout.LayoutParams(dp(imageDp), dp(imageDp)).apply {
-            topMargin = dp(2)
-            bottomMargin = dp(6)
+        box.addView(thumbnail, LinearLayout.LayoutParams(dp(76), dp(76)).apply {
+            topMargin = dp(8)
         })
-        image.animate().alpha(1f).translationY(0f).setDuration(650).start()
     }
 
     private fun showWelcome(){
@@ -316,9 +302,6 @@ class MainActivity : Activity() {
         if(ok){
             if(!duplicate) {
                 box.addView(text("🪙 +10 Ouro   💎 +10 XP",19f))
-                // O monstro aparece SOMENTE depois da recompensa confirmada,
-                // nunca na tela inicial, no leitor ou durante o login.
-                showDailyMonster(box)
             }
             val days=data.optJSONArray("dias")
             val s=StringBuilder()
@@ -334,6 +317,8 @@ class MainActivity : Activity() {
             web.visibility=View.VISIBLE
             attachExitWatcher()
         },LinearLayout.LayoutParams(-2,dp(55)))
+        // A miniatura aparece APENAS depois do OK, quando houve nova recompensa.
+        if(ok && !duplicate) showDailyMonsterThumbnail(box)
     }
     private fun attachExitWatcher(){
         if(web.visibility!=View.VISIBLE)return
