@@ -18,7 +18,7 @@ android { namespace = "br.com.classmana.qr"; compileSdk = 35
    signingConfig = signingConfigs.getByName("classmanaPermanent")
   } }
  }
- defaultConfig { applicationId = "br.com.classmana.qr"; minSdk = 26; targetSdk = 35; versionCode = 14; versionName = "1.0.14" }
+ defaultConfig { applicationId = "br.com.classmana.qr"; minSdk = 26; targetSdk = 35; versionCode = 15; versionName = "1.0.15" }
  compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
  kotlinOptions { jvmTarget = "17" }
 }
