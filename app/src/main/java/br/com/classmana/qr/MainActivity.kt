@@ -324,6 +324,21 @@ class MainActivity : Activity() {
             .setInterpolator(android.view.animation.OvershootInterpolator(1.35f)).start()
     }
 
+    private fun makeResultScrollable(box: LinearLayout) {
+        // A imagem do monstro e a mensagem de recompensa precisam caber
+        // tanto nos tablets quanto nas telas menores, sem cortar o botao de acesso.
+        container.removeView(box)
+        val scroll = ScrollView(this).apply {
+            isFillViewport = true
+            isVerticalScrollBarEnabled = false
+            setPadding(0, dp(8), 0, dp(8))
+            addView(box, android.view.ViewGroup.LayoutParams(-1, -2))
+        }
+        container.addView(scroll, FrameLayout.LayoutParams(-1, -1).apply {
+            setMargins(dp(12), 0, dp(12), 0)
+        })
+    }
+
     private fun showResult(data:JSONObject){
         val ok=data.optBoolean("ok")
         val duplicate=data.optBoolean("jaRegistrado")
@@ -332,6 +347,7 @@ class MainActivity : Activity() {
             else if(duplicate)"Seu login foi reconhecido. Presença já registrada hoje."
             else "Sua entrada foi confirmada e a presença foi computada."
         val box=showCard(title,subtitle,null,null)
+        makeResultScrollable(box)
         if(ok) {
             // O som de entrada toca quando o registro e confirmado, e nao depois de clicar em OK.
             showConfirmationAnimation(box, duplicate)
