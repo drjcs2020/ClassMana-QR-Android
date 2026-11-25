@@ -203,14 +203,35 @@ class MainActivity : Activity() {
             runOnUiThread{showResult(result)}
         }
     }
+    private fun showConfirmationAnimation(box: LinearLayout, duplicate: Boolean) {
+        val label = TextView(this).apply {
+            text = if (duplicate) "✓ Presença já contabilizada hoje" else "✓ Check-in confirmado!"
+            textSize = 17f
+            typeface = Typeface.DEFAULT_BOLD
+            gravity = Gravity.CENTER
+            setTextColor(Color.rgb(29, 112, 63))
+            background = rounded(Color.rgb(221, 246, 228))
+            setPadding(dp(15), dp(9), dp(15), dp(9))
+            alpha = 0f
+            scaleX = 0.82f
+            scaleY = 0.82f
+        }
+        box.addView(label, LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(7) })
+        label.animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(420).start()
+    }
+
     private fun showResult(data:JSONObject){
         val ok=data.optBoolean("ok")
         val duplicate=data.optBoolean("jaRegistrado")
         val title=if(ok)"Recompensa do dia" else "Acesso ao ClassMana"
         val subtitle=if(!ok)data.optString("error","Não foi possível confirmar a presença.") else if(duplicate)"Presença já registrada hoje." else "Sua Presença foi Registrada!"
         val box=showCard(title,subtitle,null,null)
-        // Somente a recompensa nova toca moedas (sem duplicar credito).
+        // O retorno positivo do servidor confirma o registro antes de qualquer efeito.
+        // Novas recompensas mantem o som de moedas; presencas repetidas nao creditam novamente.
         if(ok && !duplicate) CoinSound.play()
+        if(ok) {
+            showConfirmationAnimation(box, duplicate)
+        }
         if(ok){
             if(!duplicate)box.addView(text("🪙 +10 Ouro   💎 +10 XP",19f))
             val days=data.optJSONArray("dias")
@@ -222,7 +243,8 @@ class MainActivity : Activity() {
             box.addView(text("Sequência: ${data.optInt("sequencia")} dia(s)",13f))
         }
         box.addView(button("OK — Entrar no ClassMana"){
-            if(ok && !duplicate) CoinSound.play()
+            // Som de boas-vindas ao abrir a plataforma, diferente das moedas do check-in.
+            if(ok) EntrySound.play()
             container.removeAllViews();container.addView(web,FrameLayout.LayoutParams(-1,-1))
             web.visibility=View.VISIBLE
             attachExitWatcher()
