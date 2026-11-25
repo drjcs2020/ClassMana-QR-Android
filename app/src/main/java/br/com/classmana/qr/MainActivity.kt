@@ -3,6 +3,12 @@ package br.com.classmana.qr
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.graphics.Color
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import java.time.DayOfWeek
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.temporal.ChronoUnit
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -82,9 +88,80 @@ class MainActivity : Activity() {
         container.addView(box,l)
         return box
     }
+    // Os sete personagens originais foram enviados pelo professor.
+    // A ordem do atlas e: Fantasma, Golem, Rainha Aranha, Morcego,
+    // Mestre da Colmeia, Hydra e Dragao de Fogo.
+    private val monsterNames = arrayOf(
+        "Fantasma", "Golem de Lava", "Rainha Aranha", "Morcego",
+        "Mestre da Colmeia", "Hydra", "Dragão de Fogo"
+    )
+    private var monsterAtlas: Bitmap? = null
+
+    private fun monsterForToday(): Pair<Int, String>? {
+        // A data de referencia e a de Brasilia, mesmo se o tablet mudar de fuso.
+        val today = LocalDate.now(ZoneId.of("America/Sao_Paulo"))
+        if (today.dayOfWeek == DayOfWeek.SATURDAY ||
+            today.dayOfWeek == DayOfWeek.SUNDAY) return null
+
+        // O ciclo comeca em uma segunda-feira e continua apenas nos dias uteis.
+        val elapsed = ChronoUnit.DAYS.between(LocalDate.of(2026, 11, 23), today)
+        val fullWeeks = Math.floorDiv(elapsed, 7L)
+        val remainingDays = Math.floorMod(elapsed, 7L).toInt()
+        val workingDays = fullWeeks * 5L + minOf(remainingDays, 5).toLong()
+        val index = Math.floorMod(workingDays, monsterNames.size.toLong()).toInt()
+        return index to monsterNames[index]
+    }
+
+    private fun monsterBitmap(index: Int): Bitmap? {
+        return try {
+            val atlas = monsterAtlas ?: run {
+                val encoded = assets.open("classmana_monsters_atlas.b64")
+                    .bufferedReader(Charsets.US_ASCII).use { it.readText() }
+                val data = Base64.decode(encoded.trim(), Base64.DEFAULT)
+                BitmapFactory.decodeByteArray(data, 0, data.size)?.also {
+                    monsterAtlas = it
+                } ?: return null
+            }
+            val cell = atlas.width / monsterNames.size
+            if (cell <= 0 || atlas.height < cell) return null
+            Bitmap.createBitmap(atlas, index * cell, 0, cell, cell)
+        } catch (e: Exception) {
+            android.util.Log.w("ClassManaMonster", "Falha ao carregar monstro do dia", e)
+            null
+        }
+    }
+
+    private fun showDailyMonster(box: LinearLayout) {
+        val monster = monsterForToday() ?: return
+        val bitmap = monsterBitmap(monster.first) ?: return
+        val imageDp = when {
+            resources.configuration.smallestScreenWidthDp >= 600 -> 200
+            resources.configuration.screenHeightDp < 690 -> 115
+            else -> 160
+        }
+        val label = text("MONSTRO DO DIA  •  ${monster.second}", 16f).apply {
+            typeface = Typeface.DEFAULT_BOLD
+            setTextColor(Color.rgb(55, 113, 143))
+        }
+        box.addView(label)
+        val image = ImageView(this).apply {
+            setImageBitmap(bitmap)
+            scaleType = ImageView.ScaleType.FIT_CENTER
+            contentDescription = "Monstro do dia: ${monster.second}"
+            alpha = 0f
+            translationY = dp(12).toFloat()
+        }
+        box.addView(image, LinearLayout.LayoutParams(dp(imageDp), dp(imageDp)).apply {
+            topMargin = dp(2)
+            bottomMargin = dp(6)
+        })
+        image.animate().alpha(1f).translationY(0f).setDuration(650).start()
+    }
+
     private fun showWelcome(){
         generation++;scanBusy=false;loginSubmitted=false;confirmedLogin=false;account=null;secret=null
         val box=showCard("Leitor de Cartão de Herói","Escolha a câmera para ler o cartão do estudante.",null,null)
+        showDailyMonster(box)
         box.addView(button("📷 Câmera frontal") { scan(true) },LinearLayout.LayoutParams(-1,dp(55)))
         box.addView(button("📷 Câmera traseira") { scan(false) },LinearLayout.LayoutParams(-1,dp(55)).apply { topMargin=dp(12) })
     }
@@ -149,7 +226,8 @@ class MainActivity : Activity() {
     }
     private fun startLogin(){
         val g=++generation;loginSubmitted=false;confirmedLogin=false;profileChecks=0
-        showCard("Autenticando com segurança","Encerrando a sessão anterior e preparando o acesso...",null,null)
+        val loginBox = showCard("Autenticando com segurança","Encerrando a sessão anterior e preparando o acesso...",null,null)
+        showDailyMonster(loginBox)
         // Remover sessão da WebView antes de cada login. A página não será exibida antes da confirmação.
         web.stopLoading()
         web.loadUrl("about:blank")
