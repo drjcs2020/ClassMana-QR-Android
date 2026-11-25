@@ -280,50 +280,6 @@ class MainActivity : Activity() {
             runOnUiThread{showResult(result)}
         }
     }
-    private fun showConfirmationAnimation(box: LinearLayout, duplicate: Boolean) {
-        // A confirmacao permanece visivel depois da animacao, inclusive em tablets.
-        val banner = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            gravity = Gravity.CENTER
-            setPadding(dp(12), dp(12), dp(12), dp(12))
-            background = GradientDrawable().apply {
-                setColor(Color.rgb(224, 249, 232))
-                cornerRadius = dp(20).toFloat()
-                setStroke(dp(2), Color.rgb(42, 162, 94))
-            }
-            alpha = 0f
-            translationY = dp(26).toFloat()
-        }
-        val symbol = text("✓", 49f).apply {
-            setTextColor(Color.rgb(31, 145, 70))
-            typeface = Typeface.DEFAULT_BOLD
-            scaleX = 0.2f
-            scaleY = 0.2f
-        }
-        val headline = text(
-            if (duplicate) "ACESSO RECONHECIDO!" else "PRESENÇA CONFIRMADA!",
-            20f
-        ).apply {
-            typeface = Typeface.DEFAULT_BOLD
-            setTextColor(Color.rgb(17, 110, 51))
-        }
-        val detail = text(
-            if (duplicate) "Você já recebeu a recompensa de hoje."
-            else "Seu check-in foi computado com sucesso!",
-            14f
-        ).apply { setTextColor(Color.rgb(31, 96, 57)) }
-        banner.addView(symbol)
-        banner.addView(headline)
-        banner.addView(detail)
-        box.addView(banner, LinearLayout.LayoutParams(-1, -2).apply {
-            topMargin = dp(9)
-            bottomMargin = dp(9)
-        })
-        banner.animate().alpha(1f).translationY(0f).setDuration(750).start()
-        symbol.animate().scaleX(1f).scaleY(1f).setDuration(1150)
-            .setInterpolator(android.view.animation.OvershootInterpolator(1.35f)).start()
-    }
-
     private fun makeResultScrollable(box: LinearLayout) {
         // A imagem do monstro e a mensagem de recompensa precisam caber
         // tanto nos tablets quanto nas telas menores, sem cortar o botao de acesso.
@@ -342,15 +298,14 @@ class MainActivity : Activity() {
     private fun showResult(data:JSONObject){
         val ok=data.optBoolean("ok")
         val duplicate=data.optBoolean("jaRegistrado")
-        val title=if(ok)"Bem-vindo ao ClassMana!" else "Acesso ao ClassMana"
+        val title=if(ok&&!duplicate)"Recompensa do dia" else if(ok)"Presença já registrada" else "Acesso ao ClassMana"
         val subtitle=if(!ok)data.optString("error","Não foi possível confirmar a presença.")
-            else if(duplicate)"Seu login foi reconhecido. Presença já registrada hoje."
-            else "Sua entrada foi confirmada e a presença foi computada."
+            else if(duplicate)"Presença já registrada hoje. Nenhuma recompensa nova foi gerada."
+            else "Sua Presença foi Registrada!"
         val box=showCard(title,subtitle,null,null)
         makeResultScrollable(box)
         if(ok) {
-            // O som de entrada toca quando o registro e confirmado, e nao depois de clicar em OK.
-            showConfirmationAnimation(box, duplicate)
+            // O som original toca na confirmacao. A recompensa so e exibida se o servidor creditar no dia.
             EntrySound.play(this)
             // Moedas apenas para check-in novo; esperar o som de boas-vindas terminar.
             if(!duplicate) {
