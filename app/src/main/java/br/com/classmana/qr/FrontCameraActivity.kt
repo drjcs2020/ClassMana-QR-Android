@@ -50,15 +50,23 @@ class FrontCameraActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.statusBarColor=Color.rgb(227,247,251)
-        // Em tablets na vertical, o leitor ocupa a maior parte da largura disponivel.
-        // O ajuste fica restrito a esta tela: login e check-in nao sao alterados.
+        // No tablet, reduzir somente o enquadramento visual da camera:
+        // leitura QR, selecao de lente e comportamento do celular nao mudam.
         val config = resources.configuration
-        val tabletPortrait = config.smallestScreenWidthDp >= 600 &&
+        val isTablet = config.smallestScreenWidthDp >= 600
+        val tabletPortrait = isTablet &&
             config.screenHeightDp > config.screenWidthDp
-        val cameraHeightDp = if (tabletPortrait) {
-            minOf(config.screenWidthDp - 100, (config.screenHeightDp * 0.56f).toInt())
-                .coerceAtLeast(360)
-        } else 237
+        val cameraWidthDp = if (isTablet) {
+            minOf(490, (config.screenWidthDp - 84).coerceAtLeast(300))
+        } else 0
+        val cameraHeightDp = when {
+            tabletPortrait -> minOf(
+                (cameraWidthDp * 0.75f).toInt(),
+                (config.screenHeightDp * 0.36f).toInt()
+            ).coerceIn(260, 365)
+            isTablet -> 285
+            else -> 237
+        }
         val outer=FrameLayout(this).apply {setBackgroundColor(Color.rgb(235,248,251))}
         val card=LinearLayout(this).apply {
             orientation=LinearLayout.VERTICAL
@@ -93,7 +101,11 @@ class FrontCameraActivity : ComponentActivity() {
         }
         cameraFrame.addView(previewView,FrameLayout.LayoutParams(-1,-1))
         // A moldura permanece, mesmo quando a permissão da câmera ainda não foi concedida.
-        val cameraParams=LinearLayout.LayoutParams(-1,dp(cameraHeightDp)).apply{
+        val cameraParams=LinearLayout.LayoutParams(
+            if(isTablet) dp(cameraWidthDp) else -1,
+            dp(cameraHeightDp)
+        ).apply {
+            gravity=Gravity.CENTER_HORIZONTAL
             bottomMargin=dp(if(tabletPortrait) 22 else 17)
         }
         card.addView(cameraFrame,cameraParams)
@@ -105,8 +117,15 @@ class FrontCameraActivity : ComponentActivity() {
             setOnClickListener{setResult(Activity.RESULT_CANCELED);finish()}
         }
         card.addView(cancel,LinearLayout.LayoutParams(dp(if(tabletPortrait) 230 else 160),dp(if(tabletPortrait) 66 else 50)))
-        val lp=FrameLayout.LayoutParams(-1,-2,Gravity.CENTER).apply{
-            marginStart=dp(if(tabletPortrait) 26 else 22);marginEnd=dp(if(tabletPortrait) 26 else 22)
+        val cardWidthDp = if (isTablet) {
+            minOf(680, (config.screenWidthDp - 52).coerceAtLeast(320))
+        } else 0
+        val lp=FrameLayout.LayoutParams(
+            if(isTablet) dp(cardWidthDp) else -1,
+            -2, Gravity.CENTER
+        ).apply {
+            marginStart=dp(if(tabletPortrait) 26 else 22)
+            marginEnd=dp(if(tabletPortrait) 26 else 22)
         }
         outer.addView(card,lp)
         setContentView(outer)
