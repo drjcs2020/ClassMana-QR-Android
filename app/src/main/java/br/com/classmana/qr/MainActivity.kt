@@ -62,6 +62,35 @@ class MainActivity : Activity() {
         setColor(color); cornerRadius = dp(15).toFloat()
     }
     private fun dp(n:Int):Int = (n*resources.displayMetrics.density).toInt()
+    private fun isTabletScreen(): Boolean =
+        resources.configuration.smallestScreenWidthDp >= 600
+
+    private fun isCompactTablet(): Boolean =
+        isTabletScreen() && resources.configuration.screenHeightDp < 800
+
+    // Apenas a tela de recompensa recebe a escala de tablet.
+    // As telas de camera, login e a versao celular mantem suas medidas originais.
+    private fun styleRewardCardForTablet(box: LinearLayout) {
+        if (!isTabletScreen()) return
+        val compact = isCompactTablet()
+        box.setPadding(dp(if (compact) 28 else 44), dp(28),
+            dp(if (compact) 28 else 44), dp(32))
+        (box.getChildAt(0) as? ImageView)?.apply {
+            adjustViewBounds = true
+            maxHeight = dp(if (compact) 130 else 160)
+            scaleType = ImageView.ScaleType.FIT_CENTER
+            layoutParams = LinearLayout.LayoutParams(
+                dp(if (compact) 310 else 385),
+                dp(if (compact) 130 else 160)
+            )
+        }
+        (box.getChildAt(1) as? TextView)?.apply {
+            textSize = if (compact) 28f else 34f
+            typeface = Typeface.DEFAULT_BOLD
+        }
+        (box.getChildAt(2) as? TextView)?.textSize =
+            if (compact) 18f else 22f
+    }
     private fun button(label:String, click:()->Unit): Button = Button(this).apply {
         text=label; isAllCaps=false; textSize=16f; setTextColor(Color.WHITE)
         background=rounded(teal); setPadding(dp(18),dp(10),dp(18),dp(10))
@@ -140,8 +169,13 @@ class MainActivity : Activity() {
             scaleType = ImageView.ScaleType.FIT_CENTER
             contentDescription = monster.second
         }
-        box.addView(thumbnail, LinearLayout.LayoutParams(dp(152), dp(152)).apply {
-            topMargin = dp(8)
+        val monsterSize = if (isTabletScreen()) {
+            if (isCompactTablet()) 190 else 245
+        } else 152
+        box.addView(thumbnail, LinearLayout.LayoutParams(
+            dp(monsterSize), dp(monsterSize)
+        ).apply {
+            topMargin = dp(if (isTabletScreen()) 16 else 8)
         })
     }
 
@@ -267,14 +301,27 @@ class MainActivity : Activity() {
         }
     }
     private fun makeResultScrollable(box: LinearLayout) {
-        // A imagem do monstro e a mensagem de recompensa precisam caber
-        // tanto nos tablets quanto nas telas menores, sem cortar o botao de acesso.
+        // No celular, mantemos exatamente o layout anterior.
+        // No tablet, a area util fica mais larga e o conteudo escala sem cortes.
         container.removeView(box)
         val scroll = ScrollView(this).apply {
             isFillViewport = true
             isVerticalScrollBarEnabled = false
-            setPadding(0, dp(8), 0, dp(8))
-            addView(box, android.view.ViewGroup.LayoutParams(-1, -2))
+            setPadding(0, dp(if (isTabletScreen()) 12 else 8),
+                0, dp(if (isTabletScreen()) 12 else 8))
+        }
+        if (isTabletScreen()) {
+            val wrapper = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                gravity = Gravity.CENTER
+                setPadding(dp(8), dp(10), dp(8), dp(10))
+            }
+            val contentWidth = minOf(740,
+                (resources.configuration.screenWidthDp - 56).coerceAtLeast(420))
+            wrapper.addView(box, LinearLayout.LayoutParams(dp(contentWidth), -2))
+            scroll.addView(wrapper, android.view.ViewGroup.LayoutParams(-1, -2))
+        } else {
+            scroll.addView(box, android.view.ViewGroup.LayoutParams(-1, -2))
         }
         container.addView(scroll, FrameLayout.LayoutParams(-1, -1).apply {
             setMargins(dp(12), 0, dp(12), 0)
@@ -289,6 +336,7 @@ class MainActivity : Activity() {
             else if(duplicate)"Presença já registrada hoje. Nenhuma recompensa nova foi gerada."
             else "Sua Presença foi Registrada!"
         val box=showCard(title,subtitle,null,null)
+        styleRewardCardForTablet(box)
         makeResultScrollable(box)
         if(ok) {
             // O som original toca na confirmacao. A recompensa so e exibida se o servidor creditar no dia.
@@ -301,22 +349,46 @@ class MainActivity : Activity() {
         }
         if(ok){
             if(!duplicate) {
-                box.addView(text("🪙 +10 Ouro   💎 +10 XP",19f))
+                val reward = text("🪙 +10 Ouro   💎 +10 XP",
+                    if (isTabletScreen()) {
+                        if (isCompactTablet()) 25f else 30f
+                    } else 19f)
+                if (isTabletScreen()) reward.typeface = Typeface.DEFAULT_BOLD
+                box.addView(reward)
             }
             val days=data.optJSONArray("dias")
             val s=StringBuilder()
             if(days!=null)for(i in 0 until days.length()){
                 val d=days.getJSONObject(i);s.append(d.optString("rotulo")).append(if(d.optString("status")=="feito")" ✓ " else " – ")
             }
-            box.addView(text(s.toString(),14f))
-            box.addView(text("Sequência: ${data.optInt("sequencia")} dia(s)",13f))
+            box.addView(text(s.toString(),
+                if (isTabletScreen()) {
+                    if (isCompactTablet()) 17f else 20f
+                } else 14f))
+            box.addView(text("Sequência: ${data.optInt("sequencia")} dia(s)",
+                if (isTabletScreen()) {
+                    if (isCompactTablet()) 16f else 19f
+                } else 13f))
         }
-        box.addView(button("OK — Entrar no ClassMana"){
+        val enterButton = button("OK — Entrar no ClassMana"){
             // O som e o feedback ja foram exibidos na confirmacao do registro.
             container.removeAllViews();container.addView(web,FrameLayout.LayoutParams(-1,-1))
             web.visibility=View.VISIBLE
             attachExitWatcher()
-        },LinearLayout.LayoutParams(-2,dp(55)))
+        }
+        if (isTabletScreen()) enterButton.textSize =
+            if (isCompactTablet()) 20f else 23f
+        val buttonWidth = if (isTabletScreen()) dp(
+            minOf(400, (resources.configuration.screenWidthDp - 125).coerceAtLeast(280))
+        ) else -2
+        box.addView(enterButton, LinearLayout.LayoutParams(
+            buttonWidth,
+            dp(if (isTabletScreen()) {
+                if (isCompactTablet()) 66 else 78
+            } else 55)
+        ).apply {
+            if (isTabletScreen()) topMargin = dp(12)
+        })
         // A miniatura aparece APENAS depois do OK, quando houve nova recompensa.
         if(ok && !duplicate) showDailyMonsterThumbnail(box)
     }
